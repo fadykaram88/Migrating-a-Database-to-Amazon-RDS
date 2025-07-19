@@ -1,5 +1,6 @@
 
 # Project 7 – Migrating a Database to Amazon RDS
+![Migrating Database to RDS Architecture](https://github.com/fadykaram88/Migrating-a-Database-to-Amazon-RDS/blob/main/m6ch-lab-end-arch.png?raw=true)
 
 ## Task 1: Create RDS Instance for the Cafe App
 
