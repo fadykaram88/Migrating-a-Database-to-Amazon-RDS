@@ -1,0 +1,110 @@
+Project 7 Migrating a Database to Amazon RDS
+First Task
+let's create RDS instance for the cafe App 
+1 - search in the console about the RDS then choose Create database
+Engine options : MariaDB
+Templates : Dev/Test
+2 - Settings 
+DB instance identifier : CafeDatabase
+Master username : admin 
+Credentials management : self managed 
+Master password and Confirm master password : Caf3DbPassw0rd!
+very important note : talk a copy of the password as you will need it later  
+3 - Instance configuration 
+DB instance class : Burstable classes ( include t classes ) 
+and also choose db.t3.micro
+4 - Storage 
+Storage type : General purpose SSD(gp2)
+Allocated storage : 20 GB
+5 - Availability & durability 
+do not create a standby instance 
+6 - Connectivity 
+Virtual private cloud (VPC) : Lab VPC
+DB subnet group : lab-db-subnet-group 
+Public access : no 
+VPC security group : choose existing VPC security group then choose dbSG only and don't choose the default security group 
+note : if you don't create the VPC or the security group , come back to project 3 which help you create new VPC and security group 
+Availability zone  ( AZ) : choose the AZ which ends with ( a )
+7 - expand Additional configuration 
+Database port : 3306
+8 - Monitoring 
+Clear Enable Enhanced monitoring 
+9 - Create database
+Task 2 Analyzing the existing cafe app deployment 
+10 - I have created an EC2 instance called CafeServer for the app 
+11 - let's test the cafe app by opening the URL of the instance in the browser 
+http://3.84.143.82/cafe
+12 - when I opened the page of the cafe in the browser , I found that there are many placed orders as the current database contains past customer orders  that I will migrate to a database in AWS so now I will connect to EC2 instance by using AWS Systems manager to access a terminal session in the browser 
+13 - search in the console about EC2 then open the EC2 instance you have created (CafeServer) then choose connect then choose Session Manager then Connect so at the terminal run this command
+bash
+sudo su
+su ec2-user
+whoami
+cd /home/ec2-user/
+
+note : to connect to the Session manager you must create an EC2 instance which its AMI is Amazon linux 2 
+other note : attach an IAM policy to EC2 instance to connect to 
+Session manager which is ( AmazonSSMManagedInstanceCore)
+
+Task 3 what if I want to export the data from the old database and establish a connection to the new database?
+now we work in the migration plan so focus with me .
+we will migrate the data of the database we use to the RDS inside AWS and also establish new network connection from EC2 instance to the new RDS database we have created 
+14 - let's observe the details about the MariaDB database that runs on EC2 instance , write in the terminal 
+service mariadb status 
+mysql --version 
+leave this tap open and come back to the console 
+15 - search about Secrets then I will choose the secret which is /cafe/dbpassword then go to the secret value in the overview tab and choose Retrieve secret value and take a copy of the plaintext and save it in a clipboard   
+16 - to connect to the database which runs on the EC2 instance come back to the terminal and write :
+mysql -u root -p 
+then write the password you have taken to the clipboard and the output will be like 
+MariaDB [ (none)]> 
+16 - to observe the data in the existing database write :
+show databases ;
+use cafe_db ;
+show tables ;
+select * from 'order' ;
+these commands will show the orders that have been placed including the order I have placed 
+then write command ( exit ; ) to exit from the database 
+to ensure that the mysqldump succeeded , run ls command in the terminal , you will see in the output ( CafeDbDump.sql) 
+and also to see the content of the file write :
+cat CafeDbDump.sql 
+Task 4 importing this data into the new RDS database 
+simple note : come back to the console and don't close the terminal and search about the database to ensure that it is Available 
+17 - let's establish the network connection from the terminal running on the EC2 instance to the new RDS instance 
+first choose the RDS you have created then copy Endpoint & port as we will need it later 
+18 - get back to the terminal and write 
+mysql -u admin -p --host <rds-endpoint> 
+replace  <rds-endpoint> with the Endpoint copy you have taken 
+mysql -u admin -p --host cafedatabase.c44f9xocdlc6.us-east-1.rds.amazonaws.com 
+then write the password you have written when you create the database 
+the password I have written when I had created the database is Caf3DbPassw0rd! so remember the password you have written when you created the database 
+but simple note : what if the database doesn't open ?
+look in the security group in the inbound roles and also avoid making the security group public this time and open it only to the servers in the security group by writing sg-........ into the source 
+19 - please don't do next step if you don't solve the problem
+20 - run  show databases; 
+to see the database then write 
+then write 
+exit ;
+Task 5 importing the data into the RDS database instance  
+in the last task we exported the data from the database which we use to the RDS  and also make a connection between EC2 instance to the RDS instance 
+21 - to import the data to the RDS database instance write 
+mysql -u admin -p --host <rds-endpoint> < CafeDbDump.sql 
+and replace the <rds-endpoint> with the endpoint of the RDS then write the password of the RDS which you have written when you have created the database . 
+22 - to confirm that the data was imported write 
+mysql -u admin -p --host <rds-endpoint> 
+also don't forget to replace <rds-endpoint> with the RDS endpoint and same password 
+then write 
+show databases;
+use cafe_db;
+show tables;
+select * from `order`;
+then write 
+exit ;
+Task 6 : connecting the cafe app to the new database 
+23 - right now I want to close the connection of the app to EC2 instance and I want to link the app to RDS directly so how can we do it ? 
+After the connection between the app to the database , I want to cancel the connection between the EC2 instance and the app 
+24 - so write in the terminal 
+sudo service mariadb stop
+
+25 - I have finished the project 
+I know it's medium in difficulty so beautiful if you reached to this point  so , good bye and see you soon in other project .
